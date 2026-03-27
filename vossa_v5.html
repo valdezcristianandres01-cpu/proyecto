@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vossa — Simulador de Ofertas v5</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F6FA;--surface:#FFFFFF;--surface2:#F0F2F8;--border:#E4E8F4;--border2:#CBD3E8;
+  --navy:#0F2545;--navy2:#1A3A6B;--blue:#2563EB;--blue-l:#EFF6FF;--blue-m:#BFDBFE;
+  --green:#059669;--green-l:#D1FAE5;--red:#DC2626;--red-l:#FEE2E2;
+  --amber:#D97706;--amber-l:#FEF3C7;--text:#0F2545;--text2:#4A5878;--text3:#8896B0;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(15,37,69,.07),0 4px 16px rgba(15,37,69,.05);
+  --shadow-lg:0 4px 24px rgba(15,37,69,.12);
+}
+[data-theme="dark"]{
+  --bg:#0D1526;--surface:#162033;--surface2:#1C2B42;--border:#263348;--border2:#344960;
+  --navy:#1E3A6B;--navy2:#2A4E8C;--blue-l:#1A2E50;--blue-m:#2A4878;
+  --green-l:#0A2E22;--red-l:#2E0E0E;--amber-l:#2E1E08;
+  --text:#E2EAFB;--text2:#8AA0C0;--text3:#5A7090;
+  --shadow:0 1px 3px rgba(0,0,0,.2),0 4px 16px rgba(0,0,0,.15);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.3);
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.55;min-height:100vh;transition:background .3s,color .3s}
+input,select,button{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* Layout */
+.app{display:grid;grid-template-rows:auto auto auto 1fr;min-height:100vh}
+.topbar{background:var(--navy);padding:0 28px;display:flex;align-items:center;height:52px;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.topbar-logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em}
+.topbar-logo span{color:#60A5FA}
+.topbar-sep{width:1px;height:20px;background:rgba(255,255,255,.15)}
+.topbar-hint{font-size:11px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.topbar-best{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(96,165,250,.15);color:#93C5FD;border:1px solid rgba(96,165,250,.3)}
+.topbar-btn{font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;cursor:pointer;border:none;transition:all .15s}
+.tb-save{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.tb-save:hover{background:rgba(255,255,255,.18)}
+.tb-export{background:#2563EB;color:#fff}.tb-export:hover{background:#1D4ED8}
+.tb-theme{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);font-size:14px;line-height:1}
+.tb-theme:hover{background:rgba(255,255,255,.2)}
+
+/* Legend strip */
+.legend-strip{background:var(--surface);border-bottom:1px solid var(--border);padding:6px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.leg-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--text2)}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* Hero bar */
+.hero-bar{background:linear-gradient(135deg,#1A3A6B 0%,#0F2545 100%);padding:16px 28px;display:flex;align-items:center;gap:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.hb-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:4px}
+.hb-main{padding-right:28px;border-right:1px solid rgba(255,255,255,.1)}
+.hb-main .hb-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:2px}
+.hb-main .hb-val{font-size:36px;font-weight:800;color:#fff;letter-spacing:-.03em;line-height:1;font-family:'DM Mono',monospace}
+.hb-main .hb-sub{font-size:11px;color:#93C5FD;margin-top:2px}
+.hb-stat{padding:0 22px;border-right:1px solid rgba(255,255,255,.1)}
+.hb-stat:last-child{border:none}
+.hb-stat .hb-sv{font-size:20px;font-weight:700;color:#fff;font-family:'DM Mono',monospace}
+.hb-stat .hb-ss{font-size:10px;color:rgba(255,255,255,.45);margin-top:1px}
+@media(max-width:700px){.hero-bar{flex-wrap:wrap;gap:12px}.hb-stat{border:none}}
+
+/* Main layout */
+.main{padding:24px 28px;display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+.sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:68px}
+.content{display:flex;flex-direction:column;gap:20px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h2{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text2)}
+.card-header .ch-icon{width:26px;height:26px;background:var(--blue-l);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.card-body{padding:16px 18px}
+.card-body+.card-body{border-top:1px solid var(--border)}
+
+/* Global inputs */
+.inp-section{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.inp-group{margin-bottom:10px}
+.inp-group label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.inp-group input{width:100%;background:var(--blue-l);border:1.5px solid var(--blue-m);color:#1D4ED8;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:700;font-family:'DM Mono',monospace;transition:all .15s}
+[data-theme="dark"] .inp-group input{color:#60A5FA}
+.inp-group input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.inp-group .inp-note{font-size:10px;color:var(--text3);margin-top:2px}
+.inp-changed{animation:pulse-blue .4s ease}
+@keyframes pulse-blue{0%{box-shadow:0 0 0 0 rgba(37,99,235,.3)}100%{box-shadow:0 0 0 6px rgba(37,99,235,0)}}
+.inp-warn{background:#FEF3C7!important;border-color:#D97706!important;color:#92400E!important}
+.val-banner{border-radius:8px;padding:8px 12px;font-size:11px;font-weight:600;margin-bottom:10px;display:none;gap:6px;align-items:flex-start}
+.val-banner.show{display:flex}
+.val-warn{background:var(--amber-l);border:1px solid #FCD34D;color:#92400E}
+.val-err{background:var(--red-l);border:1px solid #FECACA;color:#991B1B}
+
+/* Sliders */
+.slider-group{margin-bottom:14px}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.slider-label{font-size:11px;font-weight:600;color:var(--text2)}
+.slider-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--blue);font-weight:700}
+.slider-group input[type=range]{width:100%;-webkit-appearance:none;height:5px;background:var(--border);border-radius:3px;outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--blue);border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 1px 4px rgba(37,99,235,.3)}
+.slider-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.slider-delta{font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;font-weight:600}
+.delta-pos{background:var(--green-l);color:var(--green)}
+.delta-neg{background:var(--red-l);color:var(--red)}
+.delta-zero{background:var(--surface2);color:var(--text3)}
+.sl-reset{font-size:11px;background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 6px;border-radius:4px;transition:all .15s;line-height:1}
+.sl-reset:hover{background:var(--surface2);color:var(--blue)}
+
+/* Executive summary */
+.exec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+.exec-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--navy2) 0%,var(--navy) 100%)}
+.exec-hdr h2{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.exec-hdr .ch-icon{width:26px;height:26px;background:rgba(255,255,255,.15);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.exec-body{padding:16px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.exec-body{grid-template-columns:1fr}}
+.exec-item{border-radius:var(--radius);padding:14px 16px;border:1.5px solid var(--border);position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
+.exec-item:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.exec-rank{position:absolute;top:10px;right:12px;font-size:20px}
+.exec-lbl{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.exec-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.exec-margin{font-size:30px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;margin-bottom:4px}
+.exec-sub{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:6px}
+.exec-desc{font-size:10px;color:var(--text3);line-height:1.5}
+.exec-item.r1{border-color:#059669;background:linear-gradient(140deg,var(--green-l) 0%,var(--surface) 55%)}
+.exec-item.r2{border-color:#2563EB;background:linear-gradient(140deg,var(--blue-l) 0%,var(--surface) 55%)}
+.exec-item.r3{border-color:#D97706;background:linear-gradient(140deg,var(--amber-l) 0%,var(--surface) 55%)}
+
+/* Scenario grid */
+.scenarios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.sc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;transition:all .2s;position:relative;overflow:hidden}
+.sc-card:hover{border-color:var(--blue-m);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.sc-card.selected{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.sc-card.selected::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--blue);border-radius:14px 14px 0 0}
+.sc-card.compare-a{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.sc-card.compare-a::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#7C3AED}
+.sc-card.compare-b{border-color:#DB2777;box-shadow:0 0 0 3px rgba(219,39,119,.12)}
+.sc-card.compare-b::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#DB2777}
+.sc-top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:6px}
+.sc-name-wrap{flex:1;min-width:0}
+.sc-name-inp{width:100%;border:none;background:transparent;font-size:13px;font-weight:700;color:var(--text);padding:0;font-family:'DM Sans',sans-serif;outline:none}
+.sc-name-inp:focus{color:var(--blue)}
+.sc-badges{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.sc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.badge-2p{background:#EDE9FE;color:#6D28D9}
+.badge-1p{background:var(--green-l);color:#065F46}
+.sem{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.sem-ok{background:#D1FAE5;color:#065F46}
+.sem-mid{background:#FEF3C7;color:#92400E}
+.sem-bad{background:#FEE2E2;color:#991B1B}
+.sem-crit{background:#FCE7F3;color:#9D174D}
+.sc-hero{margin:10px 0 4px;cursor:pointer}
+.sc-hero-val{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1;font-family:'DM Mono',monospace}
+.sc-hero-label{font-size:10px;color:var(--text3);margin-top:1px}
+.sc-hero-sub{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text2);margin-top:3px}
+.sc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0;cursor:pointer}
+.sc-met{background:var(--surface2);border-radius:6px;padding:6px 8px}
+.sc-met-val{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)}
+.sc-met-key{font-size:9px;color:var(--text3);margin-top:1px}
+.sc-bar{height:5px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.sc-card.just-changed{animation:card-flash .4s ease}
+@keyframes card-flash{0%{background:#EFF6FF}100%{background:var(--surface)}}
+.sc-controls{border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:7px}
+.sc-ctrl-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sc-ctrl-label{font-size:11px;color:var(--text2);font-weight:500}
+.sc-ctrl-right{display:flex;align-items:center;gap:6px}
+.sc-acc-btn{display:none;width:100%;background:var(--surface2);border:none;color:var(--text3);font-size:11px;font-weight:600;padding:5px 8px;border-radius:6px;cursor:pointer;text-align:center;margin-top:8px;transition:all .15s}
+.sc-acc-btn:hover{background:var(--border);color:var(--text)}
+@media(max-width:600px){.sc-acc-btn{display:block}.sc-controls{display:none}.sc-controls.open{display:flex}}
+.tog{position:relative;width:34px;height:19px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:#CBD5E1;border-radius:10px;transition:background .2s;cursor:pointer}
+.tog input:checked+.tog-track{background:var(--blue)}
+.tog-thumb{position:absolute;top:2.5px;left:2.5px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog input:checked~.tog-thumb{transform:translateX(15px)}
+.tog-label{font-size:11px;color:var(--text3);min-width:22px}
+.seg{display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:1px}
+.seg-btn{flex:1;padding:4px 8px;border:none;background:transparent;border-radius:5px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+.seg-btn.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+[data-theme="dark"] .seg-btn.active{background:var(--navy);color:#60A5FA}
+.sc-num{width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:12px;font-family:'DM Mono',monospace;font-weight:600;color:var(--text);text-align:center;outline:none;transition:border-color .15s}
+.sc-num:focus{border-color:var(--blue);background:var(--blue-l)}
+.sc-del-btn{width:22px;height:22px;background:var(--red-l);color:var(--red);border:none;border-radius:6px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .15s;flex-shrink:0}
+.sc-del-btn:hover{opacity:1}
+.sc-clone-btn{width:22px;height:22px;background:var(--blue-l);color:var(--blue);border:none;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;transition:opacity .15s;flex-shrink:0;title:"Clonar"}
+.sc-clone-btn:hover{opacity:1}
+.btn-add-sc{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--radius-lg);color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-add-sc:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+
+/* Compare */
+.compare-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cmp-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.cmp-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;cursor:pointer;transition:all .15s}
+.cmp-a{background:#EDE9FE;color:#6D28D9;border:1.5px solid #C4B5FD}
+.cmp-b{background:#FCE7F3;color:#9D174D;border:1.5px solid #F9A8D4}
+.cmp-clear{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.cmp-clear:hover{background:var(--red-l);color:var(--red);border-color:var(--red)}
+.cmp-detail{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.cmp-detail{grid-template-columns:1fr}}
+.cmp-col{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.cmp-col-header{padding:12px 16px;font-size:12px;font-weight:700;color:#fff}
+.cmp-col-a .cmp-col-header{background:#7C3AED}
+.cmp-col-b .cmp-col-header{background:#DB2777}
+.cmp-row{display:flex;justify-content:space-between;padding:7px 16px;border-bottom:1px solid var(--border);font-size:12px}
+.cmp-row:last-child{border:none}
+.cmp-row .key{color:var(--text2)}.cmp-row .val{font-weight:700;font-family:'DM Mono',monospace}
+.diff-better{color:var(--green)}.diff-worse{color:var(--red)}.diff-same{color:var(--text3)}
+
+/* Charts */
+.charts-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.charts-grid-2{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
+.chart-ref-note{font-size:10px;color:var(--text3);margin-top:8px;display:flex;align-items:center;gap:4px}
+.ref-dash{display:inline-block;width:12px;height:2px;background:var(--red);border-radius:1px;vertical-align:middle;margin-right:2px}
+.ref-dash-g{background:var(--green)}
+
+/* Table */
+.an-table{width:100%;border-collapse:collapse;font-size:12px}
+.an-table th{padding:9px 12px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--navy);text-align:center;white-space:nowrap}
+.an-table th:first-child{text-align:left;border-radius:8px 0 0 0}
+.an-table th:last-child{border-radius:0 8px 0 0}
+.an-table td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:center;transition:background .1s}
+.an-table td:first-child{text-align:left;font-weight:600;color:var(--navy)}
+[data-theme="dark"] .an-table td:first-child{color:#93C5FD}
+.an-table tr:nth-child(even) td{background:var(--surface2)}
+.an-table tr.sel-tr td{background:var(--blue-l)!important}
+.an-table tr.sel-tr td:first-child{color:var(--blue)}
+.an-table tbody tr:hover td{background:var(--blue-l)!important;cursor:pointer}
+.chip{display:inline-block;padding:2px 7px;border-radius:4px;font-weight:700;font-size:10px}
+.chip-g{background:var(--green-l);color:#065F46}.chip-a{background:var(--amber-l);color:#92400E}.chip-r{background:var(--red-l);color:#991B1B}
+.w-trophy{font-size:11px;margin-left:3px}
+
+/* Detail */
+.detail-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.detail-cols{grid-template-columns:1fr}}
+.dr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.dr:last-child{border:none;padding-top:10px}
+.dr .key{color:var(--text2)}.dr .val{font-weight:700;font-family:'DM Mono',monospace}
+.dr .neg{color:var(--red)}.dr .pos{color:var(--green)}.dr .blue{color:var(--blue)}.dr .big{font-size:15px}
+.pres-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:600px){.pres-grid{grid-template-columns:repeat(2,1fr)}}
+.pc{border-radius:var(--radius);padding:14px 15px}
+.pc.b{background:var(--blue-l);border:1px solid var(--blue-m)}
+.pc.g{background:var(--green-l);border:1px solid #6EE7B7}
+.pc.a{background:var(--amber-l);border:1px solid #FCD34D}
+.pc.p{background:#EDE9FE;border:1px solid #C4B5FD}
+.pc-icon{font-size:18px;margin-bottom:6px}.pc-label{font-size:10px;color:var(--text2);margin-bottom:3px;font-weight:500}
+.pc-mes{font-size:17px;font-weight:800;color:var(--text);font-family:'DM Mono',monospace}
+.pc-dia{font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace}
+.sim-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:8px;font-size:12px;margin-bottom:6px;border:1px solid transparent;transition:all .15s}
+.sim-row.ok{background:var(--green-l);border-color:#A7F3D0}
+.sim-row.neg{background:var(--red-l);border-color:#FECACA}
+.sim-row.sel{outline:2px solid var(--blue);background:var(--blue-l)}
+.sim-val{font-weight:800;font-family:'DM Mono',monospace}
+
+/* Volume simulator */
+.vol-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}
+.vol-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.vol-hdr h2{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text2)}
+.vol-inp-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.vol-inp-row label{font-size:12px;font-weight:600;color:var(--text2)}
+.vol-inp{width:80px;background:var(--blue-l);border:1.5px solid var(--blue-m);border-radius:8px;padding:6px 10px;font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--blue);text-align:center;outline:none;transition:all .15s}
+.vol-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.vol-hint{font-size:11px;color:var(--text3)}
+.vol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.vol-item{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .2s}
+.vol-item:hover{border-color:var(--blue-m);transform:translateY(-1px)}
+.vol-item.vol-best{border-color:var(--green);background:var(--green-l)}
+.vol-item.vol-neg{border-color:var(--red);background:var(--red-l)}
+.vol-item-name{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vol-item-val{font-size:18px;font-weight:800;font-family:'DM Mono',monospace}
+.vol-item-sub{font-size:9px;color:var(--text3);margin-top:2px}
+
+/* Steps */
+.steps-hint{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:4px}
+.step-item{flex:1;padding:10px 14px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--border)}
+.step-item:last-child{border:none}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step-item.done .step-num{background:var(--green)}
+.step-text{font-size:11px;font-weight:500;color:var(--text2)}
+
+/* Misc */
+.section-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:inherit}
+.btn-sm{padding:5px 12px;font-size:11px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1D4ED8;transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue-m)}.btn-outline:hover{background:var(--blue-l)}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--border)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:9px;font-size:12px;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(80px);opacity:0;transition:all .3s;z-index:1000}
+.toast.show{transform:translateY(0);opacity:1}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:var(--shadow-lg)}
+.modal h2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.modal p{font-size:12px;color:var(--text2);margin-bottom:20px}
+.modal-btns{display:flex;flex-direction:column;gap:8px}
+.modal-btn{padding:12px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;transition:background .15s}
+.modal-btn-icon{font-size:16px}
+.modal-btn.primary{background:var(--blue);color:#fff}.modal-btn.primary:hover{background:#1D4ED8}
+.modal-btn.secondary{background:var(--surface2);color:var(--text)}.modal-btn.secondary:hover{background:var(--border)}
+.modal-close{float:right;background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;margin:-4px -4px 0 0}
+footer{text-align:center;font-size:10px;color:var(--text3);padding:16px;border-top:1px solid var(--border);margin-top:8px}
+
+/* Print */
+@media print{
+  .topbar,.legend-strip,.sidebar,.steps-hint,.btn-add-sc,.sc-controls,.sc-acc-btn,
+  .sc-del-btn,.sc-clone-btn,.compare-strip,.modal-bg,footer,.toast{display:none!important}
+  .main{grid-template-columns:1fr!important;padding:8px!important}
+  .content{gap:10px!important}
+  body{background:#fff!important}
+  .card,.chart-card,.exec-card,.vol-card{box-shadow:none!important;border:1px solid #ddd!important}
+  .hero-bar,.an-table th{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .scenarios-grid{grid-template-columns:repeat(3,1fr)!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Topbar -->
+<div class="topbar">
+  <span class="topbar-logo">Vossa <span>Shop</span></span>
+  <span class="topbar-sep"></span>
+  <span class="topbar-hint">Simulador de ofertas v5.0</span>
+  <div class="topbar-right">
+    <span class="topbar-best" id="tb-best">—</span>
+    <button class="topbar-btn tb-theme" onclick="toggleTheme()" title="Modo oscuro/claro">🌙</button>
+    <button class="topbar-btn tb-save" onclick="saveState()">💾 Guardar</button>
+    <button class="topbar-btn tb-export" onclick="openExport()">↗ Exportar</button>
+  </div>
+</div>
+
+<!-- Color legend -->
+<div class="legend-strip">
+  <span class="leg-title">Referencia de margen:</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#059669"></span>≥35% Excelente</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#2563EB"></span>20–34% Aceptable</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#D97706"></span>10–19% Riesgoso</span>
+  <span class="leg-item"><span class="leg-dot" style="background:#DC2626"></span>&lt;10% Crítico</span>
+  <span style="margin-left:auto;font-size:10px;color:var(--text3)">🏆 = mejor de la columna</span>
+</div>
+
+<!-- Hero bar -->
+<div class="hero-bar">
+  <div class="hb-main">
+    <div class="hb-label">Mejor escenario activo</div>
+    <div class="hb-name" id="hb-name">—</div>
+    <div class="hb-val" id="hb-val">—</div>
+    <div class="hb-sub" id="hb-sub">utilidad por par</div>
+  </div>
+  <div class="hb-stat" style="padding-left:28px">
+    <div class="hb-label">Margen</div>
+    <div class="hb-sv" id="hb-margen">—</div>
+    <div class="hb-ss">% utilidad</div>
+  </div>
+  <div class="hb-stat">
+    <div class="hb-label">Ticket</div>
+    <div class="hb-sv" id="hb-ticket">—</div>
+    <div class="hb-ss">IVA inc</div>
+  </div>
+  <div class="hb-stat">
+    <div class="hb-label">BE órdenes</div>
+    <div class="hb-sv" id="hb-be">—</div>
+    <div class="hb-ss">por mes</div>
+  </div>
+  <div class="hb-stat">
+    <div class="hb-label">Ventas/día</div>
+    <div class="hb-sv" id="hb-vtas">—</div>
+    <div class="hb-ss">para BE</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="card">
+      <div class="card-header"><div class="ch-icon">⚙️</div><h2>Inputs globales</h2></div>
+      <div class="card-body">
+        <div class="val-banner val-err" id="val-err">⚠️ <span id="val-err-msg"></span></div>
+        <div class="val-banner val-warn" id="val-warn">💡 <span id="val-warn-msg"></span></div>
+        <div class="inp-section">Precio y costos</div>
+        <div class="inp-group"><label>Precio lista (IVA inc)</label><input type="number" id="g_precio" value="142000" oninput="onGlobalChange(this)"><div class="inp-note">precio base sin descuentos</div></div>
+        <div class="inp-group"><label>Costo producto NETO / par</label><input type="number" id="g_costo" value="21300" oninput="onGlobalChange(this)"><div class="inp-note">sin IVA — lo que pagás al proveedor</div></div>
+        <div class="inp-group"><label>Costo logística / par</label><input type="number" id="g_logistica" value="2800" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Costo packing / par</label><input type="number" id="g_packing" value="1250" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Costo envío (OCA/correo)</label><input type="number" id="g_envio" value="10000" oninput="onGlobalChange(this)"><div class="inp-note">con IVA</div></div>
+        <div class="inp-section">Comisiones</div>
+        <div class="inp-group"><label>IIBB (%)</label><input type="number" id="g_iibb" value="4.5" step="0.1" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Pasarela tarjeta (%)</label><input type="number" id="g_pasarela" value="3" step="0.1" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Costo 3 cuotas (%)</label><input type="number" id="g_3c" value="10" step="0.1" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Costo 6 cuotas (%)</label><input type="number" id="g_6c" value="19" step="0.1" oninput="onGlobalChange(this)"></div>
+        <div class="inp-section">Publicidad y fijos</div>
+        <div class="inp-group"><label>CAC (% sobre ticket)</label><input type="number" id="g_cac" value="25" step="1" oninput="onGlobalChange(this)"></div>
+        <div class="inp-group"><label>Costos fijos / mes</label><input type="number" id="g_cf" value="5000000" oninput="onGlobalChange(this)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="ch-icon">🎛</div><h2>¿Qué pasa si...?</h2></div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Mové los sliders para ver el impacto en tiempo real.</div>
+        <div id="sliders-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Steps -->
+    <div class="steps-hint" id="steps-hint">
+      <div class="step-item done"><span class="step-num">✓</span><span class="step-text">Inputs globales cargados</span></div>
+      <div class="step-item" id="step2"><span class="step-num">2</span><span class="step-text">Configurá tus escenarios</span></div>
+      <div class="step-item" id="step3"><span class="step-num">3</span><span class="step-text">Seleccioná uno para analizar</span></div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="exec-card" id="exec-summary"></div>
+
+    <!-- Scenarios -->
+    <div>
+      <div class="section-label">Escenarios — configurá cada uno de forma independiente</div>
+      <div class="scenarios-grid" id="scenarios-grid"></div>
+    </div>
+
+    <!-- Compare strip -->
+    <div class="compare-strip" id="compare-strip" style="display:none">
+      <span class="cmp-label">Modo comparación</span>
+      <span class="cmp-pill cmp-a" id="cmp-a-label">A: —</span>
+      <span style="font-size:12px;color:var(--text3)">vs</span>
+      <span class="cmp-pill cmp-b" id="cmp-b-label">B: —</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:4px">Click en "×" para salir</span>
+      <button class="btn btn-sm btn-ghost" onclick="clearCompare()" style="margin-left:auto">× Salir</button>
+    </div>
+
+    <!-- Compare detail -->
+    <div id="compare-detail" style="display:none">
+      <div class="section-label">Comparación directa</div>
+      <div class="cmp-detail" id="cmp-detail-content"></div>
+    </div>
+
+    <!-- Charts -->
+    <div>
+      <div class="section-label">Comparativo visual — todos los escenarios</div>
+      <div class="charts-grid-2">
+        <div class="chart-card"><h3>% Margen de utilidad</h3><div style="position:relative;height:200px"><canvas id="ch-margen"></canvas></div><div class="chart-ref-note"><span class="ref-dash ref-dash-g"></span>25% = mínimo saludable</div></div>
+        <div class="chart-card"><h3>Ventas / día para break-even</h3><div style="position:relative;height:200px"><canvas id="ch-ventas"></canvas></div><div class="chart-ref-note"><span class="ref-dash"></span>10 = límite operativo razonable</div></div>
+      </div>
+      <div class="charts-grid-2" style="margin-top:12px">
+        <div class="chart-card"><h3>Pauta Meta Ads / día</h3><div style="position:relative;height:200px"><canvas id="ch-pauta"></canvas></div><div class="chart-ref-note"><span class="ref-dash"></span>$20k/día = punto de compresión</div></div>
+        <div class="chart-card"><h3>Utilidad neta por par</h3><div style="position:relative;height:200px"><canvas id="ch-util"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+      <div class="card-header"><div class="ch-icon">📋</div><h2>Tabla comparativa</h2></div>
+      <div class="card-body" style="padding:0;overflow-x:auto">
+        <table class="an-table" id="an-table" style="border-radius:0 0 var(--radius-lg) var(--radius-lg);overflow:hidden"></table>
+      </div>
+    </div>
+
+    <!-- Volume Simulator -->
+    <div class="vol-card">
+      <div class="vol-hdr"><div class="ch-icon" style="background:var(--amber-l)">📦</div><h2>Simulador de volumen</h2></div>
+      <div class="card-body">
+        <div class="vol-inp-row">
+          <label>Órdenes / día esperadas:</label>
+          <input class="vol-inp" type="number" id="vol-ordenes" value="10" min="1" max="200" oninput="renderVolumeSimulator()">
+          <span class="vol-hint">Resultado mensual descontando costos fijos</span>
+        </div>
+        <div class="vol-grid" id="vol-grid"></div>
+      </div>
+    </div>
+
+    <!-- Detail -->
+    <div id="detail-section" style="display:none">
+      <div class="section-label" id="detail-label">Detalle del escenario seleccionado</div>
+      <div class="detail-cols">
+        <div class="card"><div class="card-body" id="detail-costos"></div></div>
+        <div class="chart-card"><h3>Waterfall: del ticket a la utilidad</h3><div style="position:relative;height:280px"><canvas id="ch-wf"></canvas></div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="section-label">Presupuesto mensual para llegar al break-even</div>
+        <div class="pres-grid" id="detail-pres"></div>
+      </div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card"><div class="card-body" id="sim-info"></div></div>
+        <div id="sim-rows" style="display:flex;flex-direction:column;gap:0"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="export-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeExport()">×</button>
+    <h2>Exportar análisis</h2>
+    <p>Elegí el formato que necesitás</p>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="exportJSON()"><span class="modal-btn-icon">📦</span><div><div style="font-weight:700">Guardar como JSON</div><div style="font-size:11px;opacity:.8;font-weight:400">Todos los datos — podés reimportar</div></div></button>
+      <button class="modal-btn secondary" onclick="exportCSV()"><span class="modal-btn-icon">📊</span><div><div style="font-weight:700">Exportar tabla como CSV</div><div style="font-size:11px;color:var(--text3);font-weight:400">Compatible con Excel y Google Sheets</div></div></button>
+      <button class="modal-btn secondary" onclick="copyTable()"><span class="modal-btn-icon">📋</span><div><div style="font-weight:700">Copiar tabla al portapapeles</div><div style="font-size:11px;color:var(--text3);font-weight:400">Pegá en WhatsApp o email</div></div></button>
+      <button class="modal-btn secondary" onclick="exportPDF()"><span class="modal-btn-icon">🖨️</span><div><div style="font-weight:700">Imprimir / Guardar PDF</div><div style="font-size:11px;color:var(--text3);font-weight:400">Vista de impresión optimizada</div></div></button>
+      <button class="modal-btn secondary" onclick="closeExport()"><span class="modal-btn-icon">✕</span>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+const DEFAULTS = [
+  {name:'3 cuotas s/int',   pares:1,pago:'3c',   desc2:30,transfPct:15,envGratis:false,desc2On:false},
+  {name:'15% off transf.',  pares:1,pago:'transf',desc2:30,transfPct:15,envGratis:false,desc2On:false},
+  {name:'6 cuotas s/int',   pares:1,pago:'6c',   desc2:30,transfPct:15,envGratis:false,desc2On:false},
+  {name:'2x · 3 cuotas',   pares:2,pago:'3c',   desc2:30,transfPct:15,envGratis:false,desc2On:true},
+  {name:'2x · transf 15%', pares:2,pago:'transf',desc2:30,transfPct:15,envGratis:false,desc2On:true},
+  {name:'2x · 6c + gratis',pares:2,pago:'6c',   desc2:30,transfPct:15,envGratis:true, desc2On:true},
+];
+let scenarios = DEFAULTS.map(d=>({...d}));
+let computed = [];
+let selIdx = 0;
+let compareA = null, compareB = null;
+let charts = {};
+let sliderBaseValues = {};
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
+const $f = n => n==null||!isFinite(n)?'—':'$'+Math.round(n).toLocaleString('es-AR');
+const $k = n => n==null||!isFinite(n)?'—':'$'+Math.round(n/1000).toLocaleString('es-AR')+'k';
+const $M = n => n==null||!isFinite(n)?'—':'$'+(n/1e6).toFixed(1)+'M';
+const pc = n => n==null||!isFinite(n)?'—':(n*100).toFixed(1)+'%';
+const r  = n => Math.round(n||0);
+function bc(u){return u>=.35?'#059669':u>=.20?'#2563EB':u>=.10?'#D97706':'#DC2626'}
+function semLabel(u){
+  if(u>=.35) return '<span class="sem sem-ok">● Excelente</span>';
+  if(u>=.20) return '<span class="sem sem-mid">● Aceptable</span>';
+  if(u>=.10) return '<span class="sem sem-bad">● Riesgoso</span>';
+  return '<span class="sem sem-crit">● Crítico</span>';
+}
+
+// ─── Get globals ──────────────────────────────────────────────────────────────
+function G(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  return{precio:n('g_precio'),costo:n('g_costo'),logistica:n('g_logistica'),
+    packing:n('g_packing'),envio:n('g_envio'),iibb:n('g_iibb')/100,
+    pasarela:n('g_pasarela')/100,cf3:n('g_3c')/100,cf6:n('g_6c')/100,
+    cac:n('g_cac')/100,cf:n('g_cf')};
+}
+
+// ─── Calc ─────────────────────────────────────────────────────────────────────
+function calcSc(s,I){
+  const isT=s.pago==='transf';
+  const td=(s.transfPct||0)/100;
+  const p1=isT?I.precio*(1-td):I.precio;
+  const p2=s.pares===2&&s.desc2On?I.precio*(isT?(1-td)*(1-(s.desc2||0)/100):(1-(s.desc2||0)/100)):(s.pares===2?I.precio:0);
+  const ticket=p1+p2;
+  const ingreso=ticket/1.105;
+  const costoP=(I.costo+I.logistica+I.packing)*s.pares;
+  const envioA=s.envGratis?I.envio:0;
+  const iibbM=ticket*I.iibb;
+  const pasM=isT?0:ticket*I.pasarela;
+  const cfM=s.pago==='3c'?ticket*I.cf3:s.pago==='6c'?ticket*I.cf6:0;
+  const cv=costoP+envioA+iibbM+pasM+cfM;
+  const mop=ingreso-cv;
+  const mopPct=ingreso>0?mop/ingreso:0;
+  const cac=ticket*I.cac;
+  const util=mop-cac;
+  const utilPar=util/(s.pares||1);
+  const utilPct=ingreso>0?util/ingreso:0;
+  const ordBE=util>0?Math.ceil(I.cf/util):9999;
+  const parBE=ordBE===9999?null:ordBE*s.pares;
+  const facObj=ordBE===9999?null:ordBE*ticket;
+  const objDia=facObj?facObj/30:null;
+  const vtsDia=objDia?Math.ceil(objDia/(ticket/(s.pares||1))):null;
+  const pautDia=ordBE===9999?null:ordBE*cac/30;
+  return{ticket,p1,p2,ingreso,costoP,envioA,iibbM,pasM,cfM,cv,
+    mop,mopPct,cac,util,utilPar,utilPct,ordBE,parBE,facObj,objDia,vtsDia,pautDia,
+    presPrv:parBE?parBE*I.costo:null,presLog:parBE?parBE*I.logistica:null,
+    presPck:parBE?parBE*I.packing:null,presPau:ordBE===9999?null:ordBE*cac};
+}
+
+function recalc(){
+  const I=G();
+  computed=scenarios.map(s=>calcSc(s,I));
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+function validateInputs(){
+  const I=G();
+  const netRevenue=I.precio/1.105;
+  const minCost=I.costo+I.logistica+I.packing;
+  const errEl=document.getElementById('val-err');
+  const warnEl=document.getElementById('val-warn');
+  const errMsg=document.getElementById('val-err-msg');
+  const warnMsg=document.getElementById('val-warn-msg');
+  errEl.classList.remove('show'); warnEl.classList.remove('show');
+  if(minCost>=netRevenue){
+    errMsg.textContent=`Costo por par ($${Math.round(minCost).toLocaleString('es-AR')}) supera el ingreso neto ($${Math.round(netRevenue).toLocaleString('es-AR')}). Todos los escenarios dan pérdida.`;
+    errEl.classList.add('show');
+  } else if(minCost/netRevenue>0.6){
+    warnMsg.textContent=`Costo/par representa el ${(minCost/netRevenue*100).toFixed(0)}% del ingreso neto. El margen es muy ajustado.`;
+    warnEl.classList.add('show');
+  }
+  const precio=document.getElementById('g_precio');
+  if(I.costo>netRevenue) precio.classList.add('inp-warn'); else precio.classList.remove('inp-warn');
+}
+
+// ─── Hero bar ─────────────────────────────────────────────────────────────────
+function updateHero(){
+  if(!computed.length) return;
+  const best=computed.reduce((a,b)=>b.utilPct>a.utilPct?b:a);
+  const bi=computed.indexOf(best);
+  const s=scenarios[bi];
+  document.getElementById('hb-name').textContent=`${String.fromCharCode(65+bi)}: ${s.name}`;
+  document.getElementById('hb-val').textContent=$f(best.utilPar);
+  document.getElementById('hb-margen').textContent=pc(best.utilPct);
+  document.getElementById('hb-ticket').textContent=$f(best.ticket);
+  document.getElementById('hb-be').textContent=best.ordBE===9999?'∞':best.ordBE;
+  document.getElementById('hb-vtas').textContent=best.vtsDia??'—';
+  document.getElementById('tb-best').textContent=`Mejor: ${String.fromCharCode(65+bi)} — ${pc(best.utilPct)} margen`;
+}
+
+// ─── Executive Summary ────────────────────────────────────────────────────────
+function renderExecutiveSummary(){
+  const ranked=[...computed].map((p,i)=>({p,i,s:scenarios[i]})).sort((a,b)=>b.p.utilPct-a.p.utilPct);
+  const top=ranked.slice(0,Math.min(3,ranked.length));
+  const ranks=['r1','r2','r3'];
+  const medals=['🥇','🥈','🥉'];
+  const lbgs=['#059669','#2563EB','#D97706'];
+  const lbls=['MEJOR MARGEN','2° LUGAR','3° LUGAR'];
+
+  function desc(p,s){
+    const parts=[];
+    if(p.utilPct>=.35) parts.push('Margen excelente');
+    else if(p.utilPct>=.2) parts.push('Margen aceptable');
+    else parts.push('Margen ajustado');
+    if(p.vtsDia&&p.vtsDia<=8) parts.push(`sólo ${p.vtsDia} vtas/día para BE`);
+    else if(p.vtsDia) parts.push(`requiere ${p.vtsDia} vtas/día`);
+    if(s.envGratis) parts.push('envío gratis incluido');
+    return parts.join(' · ');
+  }
+
+  const html=`<div class="exec-hdr"><div class="ch-icon">🏆</div><h2>Resumen ejecutivo — top 3 escenarios</h2></div>
+  <div class="exec-body">${top.map((t,rank)=>`
+    <div class="exec-item ${ranks[rank]}" onclick="selectCard(${t.i})">
+      <div class="exec-rank">${medals[rank]}</div>
+      <div class="exec-lbl" style="background:${lbgs[rank]}22;color:${lbgs[rank]}">${lbls[rank]}</div>
+      <div class="exec-name">${String.fromCharCode(65+t.i)}: ${t.s.name}</div>
+      <div class="exec-margin" style="color:${bc(t.p.utilPct)}">${pc(t.p.utilPct)}</div>
+      <div class="exec-sub" style="color:${bc(t.p.utilPct)}">${$f(t.p.utilPar)}/par · ticket ${$f(t.p.ticket)}</div>
+      <div class="exec-desc">${desc(t.p,t.s)}</div>
+    </div>`).join('')}</div>`;
+  document.getElementById('exec-summary').innerHTML=html;
+}
+
+// ─── Scenario cards ───────────────────────────────────────────────────────────
+function renderCards(){
+  const mx=Math.max(...computed.map(p=>p.utilPct));
+  const grid=document.getElementById('scenarios-grid');
+  grid.innerHTML='';
+  scenarios.forEach((s,i)=>{
+    const p=computed[i];
+    const isSelA=compareA===i, isSelB=compareB===i, isSel=selIdx===i&&compareA===null&&compareB===null;
+    const cls=isSelA?'compare-a':isSelB?'compare-b':isSel?'selected':'';
+    const card=document.createElement('div');
+    card.className=`sc-card ${cls}`;
+    card.id=`sc-card-${i}`;
+    card.innerHTML=`
+      <div class="sc-top-row">
+        <div class="sc-name-wrap">
+          <input class="sc-name-inp" value="${s.name}" placeholder="Nombre del escenario…" oninput="scChange(${i},'name',this.value)" onclick="selectCard(${i})">
+        </div>
+        <div class="sc-badges">
+          <span class="sc-badge ${s.pares===2?'badge-2p':'badge-1p'}">${s.pares===2?'2 pares':'1 par'}</span>
+          ${semLabel(p.utilPct)}
+        </div>
+      </div>
+      <div class="sc-hero" onclick="selectCard(${i})">
+        <div class="sc-hero-val" style="color:${bc(p.utilPct)}">${pc(p.utilPct)}</div>
+        <div class="sc-hero-label">margen de utilidad</div>
+        <div class="sc-hero-sub" style="color:${bc(p.utilPct)}">${$f(p.utilPar)}/par</div>
+      </div>
+      <div class="sc-metrics" onclick="selectCard(${i})">
+        <div class="sc-met"><div class="sc-met-val">${$f(p.ticket)}</div><div class="sc-met-key">ticket</div></div>
+        <div class="sc-met"><div class="sc-met-val">${p.ordBE===9999?'∞':p.ordBE}</div><div class="sc-met-key">BE órd.</div></div>
+        <div class="sc-met"><div class="sc-met-val">${p.vtsDia??'—'}</div><div class="sc-met-key">vtas/día</div></div>
+        <div class="sc-met"><div class="sc-met-val" style="color:${bc(p.utilPct)}">${$f(p.mop)}</div><div class="sc-met-key">MOP</div></div>
+      </div>
+      <div class="sc-bar"><div class="sc-bar-fill" style="width:${mx>0?(p.utilPct/mx*100).toFixed(1):0}%;background:${bc(p.utilPct)}"></div></div>
+      <button class="sc-acc-btn" onclick="toggleControls(${i},this)">⚙ Configurar ▸</button>
+      <div class="sc-controls" id="sc-ctrl-${i}">
+        <div class="sc-ctrl-row">
+          <span class="sc-ctrl-label">Pares</span>
+          <div class="seg">
+            <button class="seg-btn ${s.pares===1?'active':''}" onclick="scChange(${i},'pares',1)">1 par</button>
+            <button class="seg-btn ${s.pares===2?'active':''}" onclick="scChange(${i},'pares',2)">2 pares</button>
+          </div>
+        </div>
+        <div class="sc-ctrl-row">
+          <span class="sc-ctrl-label">Pago</span>
+          <div class="seg">
+            <button class="seg-btn ${s.pago==='contado'?'active':''}" onclick="scChange(${i},'pago','contado')">Ctdo</button>
+            <button class="seg-btn ${s.pago==='transf'?'active':''}" onclick="scChange(${i},'pago','transf')">Transf</button>
+            <button class="seg-btn ${s.pago==='3c'?'active':''}" onclick="scChange(${i},'pago','3c')">3c</button>
+            <button class="seg-btn ${s.pago==='6c'?'active':''}" onclick="scChange(${i},'pago','6c')">6c</button>
+          </div>
+        </div>
+        <div class="sc-ctrl-row">
+          <span class="sc-ctrl-label">Envío gratis</span>
+          <div class="sc-ctrl-right">
+            <label class="tog"><input type="checkbox" ${s.envGratis?'checked':''} onchange="scChange(${i},'envGratis',this.checked)"><span class="tog-track"></span><span class="tog-thumb"></span></label>
+            <span class="tog-label" style="color:${s.envGratis?'var(--green)':'var(--text3)'}">${s.envGratis?'Sí':'No'}</span>
+          </div>
+        </div>
+        <div class="sc-ctrl-row">
+          <span class="sc-ctrl-label">2do par c/desc.</span>
+          <div class="sc-ctrl-right">
+            <label class="tog"><input type="checkbox" ${s.desc2On?'checked':''} onchange="scChange(${i},'desc2On',this.checked)"><span class="tog-track"></span><span class="tog-thumb"></span></label>
+            <input class="sc-num" type="number" value="${s.desc2}" step="1" oninput="scChange(${i},'desc2',this.value)" style="${!s.desc2On?'opacity:.4':''}">
+            <span style="font-size:10px;color:var(--text3)">%</span>
+          </div>
+        </div>
+        ${s.pago==='transf'?`<div class="sc-ctrl-row">
+          <span class="sc-ctrl-label">Desc. transf.</span>
+          <div class="sc-ctrl-right">
+            <input class="sc-num" type="number" value="${s.transfPct}" step="1" oninput="scChange(${i},'transfPct',this.value)">
+            <span style="font-size:10px;color:var(--text3)">%</span>
+          </div>
+        </div>`:''}
+        <div class="sc-ctrl-row" style="justify-content:space-between;margin-top:4px">
+          <button class="btn btn-sm btn-outline" onclick="selectCard(${i})" style="flex:1;margin-right:6px">Ver detalle</button>
+          ${compareA===null&&compareB===null?`<button class="btn btn-sm" onclick="startCompare(${i})" style="background:#EDE9FE;color:#6D28D9;flex:1">Comparar</button>`:''}
+          <button class="sc-clone-btn" onclick="cloneSc(${i})" title="Clonar escenario">⧉</button>
+          ${scenarios.length>1?`<button class="sc-del-btn" onclick="delSc(${i})" title="Eliminar">×</button>`:''}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  if(scenarios.length<8){
+    const btn=document.createElement('button');
+    btn.className='btn-add-sc';
+    btn.innerHTML='<span style="font-size:18px">+</span> Agregar escenario';
+    btn.onclick=addSc;
+    grid.appendChild(btn);
+  }
+  document.getElementById('step2').classList.toggle('done',scenarios.length>0);
+  document.getElementById('step3').classList.toggle('done',true);
+}
+
+// ─── Charts ───────────────────────────────────────────────────────────────────
+function mkBar(id,data,bgs,labelFn,refLine){
+  if(charts[id]) charts[id].destroy();
+  const ctx=document.getElementById(id); if(!ctx) return;
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const tickColor=isDark?'#8AA0C0':'#8896B0';
+  const gridColor=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.04)';
+  const refPlugin=[{id:'r',afterDraw(ch){
+    if(!refLine) return;
+    const{ctx:c,chartArea,scales}=ch;
+    const x=scales.x.getPixelForValue(refLine.v);
+    if(x<chartArea.left||x>chartArea.right) return;
+    c.save();c.beginPath();c.moveTo(x,chartArea.top);c.lineTo(x,chartArea.bottom);
+    c.strokeStyle=refLine.col;c.lineWidth=1.5;c.setLineDash([4,3]);c.stroke();c.restore();
+  }}];
+  charts[id]=new Chart(ctx,{type:'bar',plugins:refPlugin,
+    data:{labels:scenarios.map((s,i)=>String.fromCharCode(65+i)+' '+s.name.slice(0,10)),
+      datasets:[{data,backgroundColor:bgs,borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:isDark?'#1E293B':'#0F2545',
+        titleColor:'#93C5FD',bodyColor:'#fff',padding:10,cornerRadius:8,
+        callbacks:{
+          title:c=>`${c[0].label}`,
+          label:c=>{const v=labelFn(c.raw);return` ${v}`},
+          afterLabel:c=>{
+            const i=c.dataIndex; const p=computed[i];
+            if(!p) return '';
+            return[` Margen: ${pc(p.utilPct)}`,` Util/par: ${$f(p.utilPar)}`];
+          }
+        }
+      }},
+      scales:{
+        x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>labelFn(v)}},
+        y:{grid:{display:false},ticks:{color:isDark?'#E2EAFB':'#0F2545',font:{size:10}}}
+      }
+    }});
+}
+
+function renderCharts(){
+  const bgs=computed.map((_,i)=>i===selIdx?bc(computed[i].utilPct):bc(computed[i].utilPct)+'55');
+  const bgsB=computed.map((_,i)=>i===selIdx?'#2563EB':'#93C5FD');
+  const bgsA=computed.map((_,i)=>i===selIdx?'#D97706':'#FCD34D');
+  mkBar('ch-margen',computed.map(p=>+(p.utilPct*100).toFixed(1)),bgs,v=>v+'%',{v:25,col:'#059669'});
+  mkBar('ch-ventas',computed.map(p=>p.vtsDia??0),bgsB,v=>v+' órd/día',{v:10,col:'#DC2626'});
+  mkBar('ch-pauta',computed.map(p=>r((p.pautDia||0)/1000)),bgsA,v=>'$'+v+'k',{v:20,col:'#DC2626'});
+  mkBar('ch-util',computed.map(p=>r(p.utilPar||0)),computed.map((_,i)=>i===selIdx?bc(computed[i].utilPct):'#BBF7D0'),v=>$f(v));
+}
+
+// ─── Table ────────────────────────────────────────────────────────────────────
+function renderTable(){
+  const validP=computed.filter(p=>isFinite(p.utilPct));
+  if(!validP.length) return;
+  const bestMargen=Math.max(...computed.map(p=>p.utilPct));
+  const bestUtil=Math.max(...computed.map(p=>p.utilPar||0));
+  const bestTicket=Math.max(...computed.map(p=>p.ticket));
+  const bestBE=Math.min(...computed.filter(p=>p.ordBE!==9999).map(p=>p.ordBE||9999));
+  const bestVtas=Math.min(...computed.filter(p=>p.vtsDia).map(p=>p.vtsDia||9999));
+  const bestPauta=Math.min(...computed.filter(p=>p.pautDia).map(p=>p.pautDia||9999));
+  const bestCAC=Math.min(...computed.map(p=>p.cac));
+  const trophy=(val,best,eps=0.01)=>Math.abs(val-best)<=eps*Math.abs(best)+1?'<span class="w-trophy">🏆</span>':'';
+
+  const hdr=`<thead><tr>
+    <th>Escenario</th><th>Ticket</th><th>Margen%</th><th>Util/par</th>
+    <th>MOP%</th><th>CAC</th><th>BE Órd.</th><th>Vtas/día</th><th>Pauta/día</th><th>Rating</th>
+  </tr></thead>`;
+  const body=computed.map((p,i)=>{
+    const rat=p.utilPct>=.35?'<span class="chip chip-g">Excelente</span>':p.utilPct>=.15?'<span class="chip chip-a">Aceptable</span>':'<span class="chip chip-r">Riesgoso</span>';
+    return`<tr class="${i===selIdx?'sel-tr':''}" onclick="selectCard(${i})">
+      <td>${String.fromCharCode(65+i)}: ${scenarios[i].name}</td>
+      <td>${$f(p.ticket)}${trophy(p.ticket,bestTicket)}</td>
+      <td style="color:${bc(p.utilPct)};font-weight:700">${pc(p.utilPct)}${trophy(p.utilPct,bestMargen)}</td>
+      <td>${$f(p.utilPar)}${trophy(p.utilPar,bestUtil)}</td>
+      <td style="color:#2563EB;font-weight:600">${pc(p.mopPct)}</td>
+      <td style="color:#DC2626">${$f(p.cac)}${trophy(p.cac,bestCAC,0.01)}</td>
+      <td style="color:${(p.ordBE||999)<=200?'#059669':(p.ordBE||999)>=400?'#DC2626':'inherit'};font-weight:600">${p.ordBE===9999?'∞':p.ordBE}${p.ordBE!==9999?trophy(p.ordBE,bestBE):''}</td>
+      <td style="color:${(p.vtsDia||99)<=8?'#059669':(p.vtsDia||99)>=15?'#DC2626':'inherit'};font-weight:600">${p.vtsDia??'—'}${p.vtsDia?trophy(p.vtsDia,bestVtas):''}</td>
+      <td>${$k(p.pautDia)}${p.pautDia?trophy(p.pautDia,bestPauta):''}</td>
+      <td>${rat}</td>
+    </tr>`;}).join('');
+  document.getElementById('an-table').innerHTML=hdr+'<tbody>'+body+'</tbody>';
+}
+
+// ─── Volume Simulator ─────────────────────────────────────────────────────────
+function renderVolumeSimulator(){
+  const ordDia=parseFloat(document.getElementById('vol-ordenes')?.value)||10;
+  const I=G();
+  const bestUtil=Math.max(...computed.map(p=>ordDia*30*p.utilPar-I.cf));
+  const html=computed.map((p,i)=>{
+    const utilMes=ordDia*30*p.utilPar-I.cf;
+    const isBest=Math.abs(utilMes-bestUtil)<1&&utilMes>0;
+    const isNeg=utilMes<0;
+    return`<div class="vol-item ${isBest?'vol-best':isNeg?'vol-neg':''}" onclick="selectCard(${i})">
+      <div class="vol-item-name">${String.fromCharCode(65+i)}: ${scenarios[i].name}</div>
+      <div class="vol-item-val" style="color:${utilMes>=0?'var(--green)':'var(--red)'}">${utilMes>=0?'+':''}${$M(utilMes)}</div>
+      <div class="vol-item-sub">util/mes · ${$f(p.utilPar)}/par</div>
+    </div>`;}).join('');
+  const volGrid=document.getElementById('vol-grid');
+  if(volGrid) volGrid.innerHTML=html;
+}
+
+// ─── Detail ───────────────────────────────────────────────────────────────────
+function renderDetail(){
+  const p=computed[selIdx]; const s=scenarios[selIdx];
+  document.getElementById('detail-section').style.display='block';
+  document.getElementById('detail-label').textContent=`Detalle — ${String.fromCharCode(65+selIdx)}: ${s.name}`;
+
+  document.getElementById('detail-costos').innerHTML=`
+    <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Estructura de costos</div>
+    <div class="dr"><span class="key">Ticket total (IVA inc)</span><span class="val">${$f(p.ticket)}</span></div>
+    <div class="dr"><span class="key">Ingreso neto sin IVA</span><span class="val">${$f(p.ingreso)}</span></div>
+    <div class="dr"><span class="key">Costo producto (${s.pares}p)</span><span class="val neg">−${$f(p.costoP)}</span></div>
+    <div class="dr"><span class="key">Envío ${s.envGratis?'(absorbido)':'(paga cliente)'}</span><span class="val${s.envGratis?' neg':''}"> ${s.envGratis?'−'+$f(p.envioA):'$0'}</span></div>
+    <div class="dr"><span class="key">IIBB</span><span class="val neg">−${$f(p.iibbM)}</span></div>
+    <div class="dr"><span class="key">Comisión pasarela</span><span class="val neg">−${$f(p.pasM)}</span></div>
+    <div class="dr"><span class="key">Costo financiero cuotas</span><span class="val neg">−${$f(p.cfM)}</span></div>
+    <div class="dr"><span class="key">Costo variable total</span><span class="val neg" style="font-size:13px">−${$f(p.cv)}</span></div>
+    <div class="dr"><span class="key">Margen bruto (MOP)</span><span class="val blue" style="font-size:13px">${$f(p.mop)}</span></div>
+    <div class="dr"><span class="key">CAC (Meta Ads ${pc(p.cac/p.ticket)})</span><span class="val neg">−${$f(p.cac)}</span></div>
+    <div class="dr"><span class="key">UTILIDAD NETA</span><span class="val big ${p.util>=0?'pos':'neg'}">${$f(p.util)}</span></div>`;
+
+  if(charts.wf) charts.wf.destroy();
+  const ctx=document.getElementById('ch-wf');
+  if(ctx){
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const labels=['Ticket','Prod.','Envío','IIBB','Pasarela','Cuotas','→ MOP','CAC','UTIL.'];
+    const vals=[p.ticket,-p.costoP,-p.envioA,-p.iibbM,-p.pasM,-p.cfM,p.mop,-p.cac,p.util];
+    const colors=vals.map((v,i)=>i===0?'#2563EB':i===6?'#7C3AED':i===8?(v>=0?'#059669':'#DC2626'):'#FCA5A5');
+    charts.wf=new Chart(ctx,{type:'bar',
+      data:{labels,datasets:[{data:vals.map(v=>r(v)),backgroundColor:colors,borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{
+          backgroundColor:isDark?'#1E293B':'#0F2545',titleColor:'#93C5FD',bodyColor:'#fff',padding:10,cornerRadius:8,
+          callbacks:{label:c=>(c.raw<0?' −':' ')+$f(Math.abs(c.raw))}
+        }},
+        scales:{
+          x:{grid:{display:false},ticks:{color:isDark?'#8AA0C0':'#8896B0',font:{size:10}}},
+          y:{grid:{color:isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.04)'},ticks:{callback:v=>$k(v),color:isDark?'#8AA0C0':'#8896B0',font:{size:9}}}
+        }}});
+  }
+
+  document.getElementById('detail-pres').innerHTML=[
+    {cls:'b',icon:'👟',label:'Producto / mes',mes:p.presPrv,dia:p.presPrv?p.presPrv/30:null},
+    {cls:'g',icon:'🚚',label:'Logística / mes',mes:p.presLog,dia:p.presLog?p.presLog/30:null},
+    {cls:'a',icon:'📦',label:'Packing / mes',mes:p.presPck,dia:p.presPck?p.presPck/30:null},
+    {cls:'p',icon:'📣',label:'Pauta / mes',mes:p.presPau,dia:p.pautDia},
+  ].map(x=>`<div class="pc ${x.cls}"><div class="pc-icon">${x.icon}</div><div class="pc-label">${x.label}</div><div class="pc-mes">${$M(x.mes)}</div><div class="pc-dia">${$k(x.dia)}/día</div></div>`).join('');
+
+  const I=G();
+  document.getElementById('sim-info').innerHTML=`
+    <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Simulador — ${s.name}</div>
+    <div class="dr"><span class="key">Utilidad/par</span><span class="val">${$f(p.utilPar)}</span></div>
+    <div class="dr"><span class="key">Costos fijos/día</span><span class="val neg">−${$k(I.cf/30)}</span></div>
+    <div class="dr"><span class="key">Break-even</span><span class="val" style="color:#D97706;font-size:13px">${p.vtsDia??'—'} ventas/día</span></div>`;
+
+  document.getElementById('sim-rows').innerHTML=[3,5,8,10,12,15,20].map(pd=>{
+    const u=pd*p.utilPar*30-I.cf;
+    const ok=u>0; const isSel=pd===(p.vtsDia||0);
+    return`<div class="sim-row ${ok?'ok':'neg'} ${isSel?'sel':''}">
+      <span style="font-weight:600;font-family:'DM Mono',monospace">${pd} pares/día</span>
+      <span class="sim-val" style="color:${ok?'#059669':'#DC2626'}">${ok?'+':''}${$M(u)}/mes</span>
+    </div>`;}).join('');
+}
+
+// ─── Compare ──────────────────────────────────────────────────────────────────
+window.startCompare = i => {
+  if(compareA===null){ compareA=i; toast(`${String.fromCharCode(65+i)} fijado como A — ahora elegí B`); }
+  else if(compareB===null&&i!==compareA){ compareB=i; renderCompare(); }
+  else{ clearCompare(); }
+  renderCards();
+};
+window.clearCompare = () => {
+  compareA=null; compareB=null;
+  document.getElementById('compare-strip').style.display='none';
+  document.getElementById('compare-detail').style.display='none';
+  renderCards();
+};
+function renderCompare(){
+  if(compareA===null||compareB===null) return;
+  const pA=computed[compareA],pB=computed[compareB];
+  const sA=scenarios[compareA],sB=scenarios[compareB];
+  document.getElementById('compare-strip').style.display='flex';
+  document.getElementById('cmp-a-label').textContent=`A: ${sA.name}`;
+  document.getElementById('cmp-b-label').textContent=`B: ${sB.name}`;
+  const rows=[
+    ['Ticket total',$f(pA.ticket),$f(pB.ticket),'ticket'],
+    ['Ingreso neto',$f(pA.ingreso),$f(pB.ingreso),'ingreso'],
+    ['Costo variable',$f(pA.cv),$f(pB.cv),'cv',true],
+    ['Margen bruto',$f(pA.mop),$f(pB.mop),'mop'],
+    ['MOP %',pc(pA.mopPct),pc(pB.mopPct),'mopPct'],
+    ['CAC publicidad',$f(pA.cac),$f(pB.cac),'cac',true],
+    ['UTILIDAD NETA',$f(pA.util),$f(pB.util),'util'],
+    ['UTILIDAD / par',$f(pA.utilPar),$f(pB.utilPar),'utilPar'],
+    ['% MARGEN',pc(pA.utilPct),pc(pB.utilPct),'utilPct'],
+    ['BE órdenes',pA.ordBE===9999?'∞':pA.ordBE,pB.ordBE===9999?'∞':pB.ordBE,'ordBE',true],
+    ['Ventas/día BE',(pA.vtsDia??'∞'),(pB.vtsDia??'∞'),'vtsDia',true],
+    ['Pauta/día',$k(pA.pautDia),$k(pB.pautDia),'pautDia',true],
+  ];
+  const mkRows=which=>rows.map(row=>{
+    const[lbl,vA,vB,key,lowerBetter]=row;
+    const numA=which==='a'?pA[key]:pB[key];
+    const numB=which==='a'?pB[key]:pA[key];
+    const isBetter=lowerBetter?(numA<numB):(numA>numB);
+    const isWorse=lowerBetter?(numA>numB):(numA<numB);
+    const val=which==='a'?vA:vB;
+    const cls=isBetter?'diff-better':isWorse?'diff-worse':'diff-same';
+    return`<div class="cmp-row"><span class="key">${lbl}</span><span class="val ${cls}">${val}</span></div>`;}).join('');
+  document.getElementById('compare-detail').style.display='block';
+  document.getElementById('cmp-detail-content').innerHTML=`
+    <div class="cmp-col cmp-col-a"><div class="cmp-col-header">${String.fromCharCode(65+compareA)}: ${sA.name}</div>${mkRows('a')}</div>
+    <div class="cmp-col cmp-col-b"><div class="cmp-col-header">${String.fromCharCode(65+compareB)}: ${sB.name}</div>${mkRows('b')}</div>`;
+}
+
+// ─── Sliders ──────────────────────────────────────────────────────────────────
+function buildSliders(){
+  const fields=[
+    {id:'g_precio',label:'Precio lista',min:.7,max:1.3,step:.01},
+    {id:'g_cac',label:'CAC %',min:.1,max:.4,step:.01},
+    {id:'g_costo',label:'Costo producto',min:.7,max:1.3,step:.01},
+    {id:'g_cf',label:'Costos fijos',min:.5,max:2,step:.05},
+  ];
+  document.getElementById('sliders-wrap').innerHTML=fields.map(f=>{
+    sliderBaseValues[f.id]=parseFloat(document.getElementById(f.id).value);
+    return`<div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label">${f.label}</span>
+        <span class="slider-val" id="sl-val-${f.id}">${sliderBaseValues[f.id].toLocaleString('es-AR')}</span>
+      </div>
+      <input type="range" id="sl-${f.id}" min="${f.min}" max="${f.max}" step="${f.step}" value="1" oninput="onSlider('${f.id}',this.value)">
+      <div class="slider-footer">
+        <span class="slider-delta delta-zero" id="sl-delta-${f.id}">sin cambio</span>
+        <button class="sl-reset" onclick="resetSlider('${f.id}')" title="Restablecer">↺ reset</button>
+      </div>
+    </div>`;}).join('');
+}
+
+window.resetSlider = id => {
+  const sl=document.getElementById('sl-'+id); if(!sl) return;
+  sl.value=1;
+  const base=sliderBaseValues[id];
+  const inp=document.getElementById(id); if(inp){inp.value=base;inp.classList.add('inp-changed');setTimeout(()=>inp.classList.remove('inp-changed'),400);}
+  const valEl=document.getElementById('sl-val-'+id); if(valEl) valEl.textContent=Math.round(base).toLocaleString('es-AR');
+  const deltaEl=document.getElementById('sl-delta-'+id); if(deltaEl){deltaEl.textContent='sin cambio';deltaEl.className='slider-delta delta-zero';}
+  renderAll();
+  toast('↺ Slider restablecido');
+};
+
+window.onSlider = (id,mult) => {
+  const base=sliderBaseValues[id];
+  const newVal=Math.round(base*parseFloat(mult));
+  const pct=Math.round((parseFloat(mult)-1)*100);
+  const inp=document.getElementById(id);
+  inp.value=newVal; inp.classList.add('inp-changed');
+  setTimeout(()=>inp.classList.remove('inp-changed'),400);
+  const valEl=document.getElementById('sl-val-'+id); if(valEl) valEl.textContent=newVal.toLocaleString('es-AR');
+  const deltaEl=document.getElementById('sl-delta-'+id);
+  if(deltaEl){deltaEl.textContent=pct===0?'sin cambio':(pct>0?'+':'')+pct+'%';deltaEl.className='slider-delta '+(pct>0?'delta-pos':pct<0?'delta-neg':'delta-zero');}
+  renderAll();
+};
+
+window.onGlobalChange = el => {
+  el.classList.add('inp-changed');
+  setTimeout(()=>el.classList.remove('inp-changed'),400);
+  sliderBaseValues[el.id]=parseFloat(el.value)||0;
+  const sl=document.getElementById('sl-'+el.id);
+  if(sl){sl.value=1;const de=document.getElementById('sl-delta-'+el.id);if(de){de.textContent='sin cambio';de.className='slider-delta delta-zero';}}
+  renderAll();
+};
+
+// ─── Scenario mutations ───────────────────────────────────────────────────────
+window.scChange = (i,key,val) => {
+  if(key==='pares') scenarios[i][key]=parseInt(val);
+  else if(['envGratis','desc2On'].includes(key)) scenarios[i][key]=!!val;
+  else if(['name','pago'].includes(key)) scenarios[i][key]=val;
+  else scenarios[i][key]=parseFloat(val)||0;
+  const card=document.getElementById(`sc-card-${i}`);
+  if(card){card.classList.add('just-changed');setTimeout(()=>card.classList.remove('just-changed'),400);}
+  renderAll();
+};
+
+window.selectCard = i => {
+  if(compareA!==null||compareB!==null){ startCompare(i); return; }
+  selIdx=i; renderAll();
+  document.getElementById('detail-section').scrollIntoView({behavior:'smooth',block:'start'});
+};
+
+window.addSc = () => {
+  if(scenarios.length>=8) return toast('Máximo 8 escenarios');
+  scenarios.push({name:'Escenario '+(scenarios.length+1),pares:1,pago:'3c',desc2:30,transfPct:15,envGratis:false,desc2On:false});
+  renderAll();
+};
+
+window.cloneSc = i => {
+  if(scenarios.length>=8) return toast('Máximo 8 escenarios');
+  const clone={...scenarios[i],name:scenarios[i].name+' (copia)'};
+  scenarios.splice(i+1,0,clone);
+  toast(`⧉ "${scenarios[i].name}" clonado`);
+  renderAll();
+};
+
+window.delSc = i => {
+  scenarios.splice(i,1);
+  if(selIdx>=scenarios.length) selIdx=scenarios.length-1;
+  if(compareA===i||compareB===i) clearCompare();
+  renderAll();
+};
+
+window.toggleControls = (i,btn) => {
+  const ctrl=document.getElementById('sc-ctrl-'+i);
+  if(!ctrl) return;
+  ctrl.classList.toggle('open');
+  btn.textContent=ctrl.classList.contains('open')?'⚙ Configurar ▾':'⚙ Configurar ▸';
+};
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+window.toggleTheme = () => {
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.querySelector('.tb-theme').textContent=isDark?'🌙':'☀️';
+  // Redraw charts for new theme colors
+  renderCharts();
+  if(document.getElementById('detail-section').style.display!=='none') renderDetail();
+};
+
+// ─── Save / Export ────────────────────────────────────────────────────────────
+window.saveState = () => {
+  const state={scenarios,globals:{
+    precio:G().precio,costo:G().costo,logistica:G().logistica,packing:G().packing,
+    envio:G().envio,iibb:G().iibb*100,pasarela:G().pasarela*100,cf3:G().cf3*100,
+    cf6:G().cf6*100,cac:G().cac*100,cf:G().cf
+  }};
+  localStorage.setItem('vossa-sim-v5',JSON.stringify(state));
+  toast('✓ Guardado localmente');
+};
+
+function loadState(){
+  try{
+    const saved=localStorage.getItem('vossa-sim-v5')||localStorage.getItem('vossa-sim-v4');
+    if(!saved) return;
+    const state=JSON.parse(saved);
+    if(state.scenarios) scenarios=state.scenarios;
+    if(state.globals){
+      const ids=['precio','costo','logistica','packing','envio'];
+      const pctIds=['iibb','pasarela','cf3','cf6','cac'];
+      ids.forEach(k=>{const el=document.getElementById('g_'+k);if(el&&state.globals[k])el.value=state.globals[k];});
+      pctIds.forEach(k=>{const el=document.getElementById('g_'+k);if(el&&state.globals[k])el.value=state.globals[k];});
+      const cfEl=document.getElementById('g_cf');if(cfEl&&state.globals.cf)cfEl.value=state.globals.cf;
+    }
+    toast('Estado restaurado');
+  }catch(e){}
+}
+
+window.openExport  = () => document.getElementById('export-modal').classList.add('open');
+window.closeExport = () => document.getElementById('export-modal').classList.remove('open');
+
+window.exportJSON = () => {
+  const data=JSON.stringify({scenarios,computed,timestamp:new Date().toISOString()},null,2);
+  dl('vossa-sim-'+ts()+'.json',data,'application/json');
+  closeExport();
+};
+window.exportCSV = () => {
+  const hdr='Escenario,Ticket,Margen%,Util/par,MOP%,CAC,BE Órdenes,Ventas/día,Pauta/día\n';
+  const rows=computed.map((p,i)=>`${String.fromCharCode(65+i)}: ${scenarios[i].name},${$f(p.ticket)},${pc(p.utilPct)},${$f(p.utilPar)},${pc(p.mopPct)},${$f(p.cac)},${p.ordBE===9999?'∞':p.ordBE},${p.vtsDia??'—'},${$k(p.pautDia)}`).join('\n');
+  dl('vossa-tabla-'+ts()+'.csv',hdr+rows,'text/csv');
+  closeExport();
+};
+window.copyTable = () => {
+  const rows=['Escenario\tTicket\tMargen%\tUtil/par\tBE Órd\tVtas/día',...computed.map((p,i)=>`${String.fromCharCode(65+i)}: ${scenarios[i].name}\t${$f(p.ticket)}\t${pc(p.utilPct)}\t${$f(p.utilPar)}\t${p.ordBE===9999?'∞':p.ordBE}\t${p.vtsDia??'—'}`)];
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>toast('✓ Copiado al portapapeles'));
+  closeExport();
+};
+window.exportPDF = () => { closeExport(); setTimeout(()=>window.print(),300); };
+
+function ts(){ return new Date().toLocaleDateString('es-AR').replace(/\//g,'-'); }
+function dl(name,data,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([data],{type}));
+  a.download=name; a.click();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ─── Render all ───────────────────────────────────────────────────────────────
+function renderAll(){
+  recalc();
+  validateInputs();
+  updateHero();
+  renderExecutiveSummary();
+  renderCards();
+  renderCharts();
+  renderTable();
+  renderVolumeSimulator();
+  renderDetail();
+  if(compareA!==null&&compareB!==null) renderCompare();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadState();
+buildSliders();
+renderAll();
+</script>
+</body>
+</html>

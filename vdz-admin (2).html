@@ -277,6 +277,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--pri);display:flex;
     <div class="nsl">Informes</div>
     <div class="ni" onclick="nav('pyl',this)"><span class="nic">📈</span>P&L mensual</div>
     <div class="ni dis"><span class="nic">📉</span>Unit economics<span class="ns">pronto</span></div>
+    <div class="nsl">Herramientas</div>
+    <div class="ni" onclick="nav('calculadora',this)"><span class="nic">🧮</span>Calculadora de precios</div>
   </nav>
   <div class="sbf">
     <div class="fi2" onclick="exportD()"><span>⬇</span> Exportar JSON</div>
@@ -624,6 +626,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--pri);display:flex;
       </div>
     </div>
 
+    <!-- CALCULADORA DE PRECIOS -->
+    <div class="panel" id="panel-calculadora">
+      <div class="pgh">
+        <div class="pgt">Calculadora de precios</div>
+        <div class="pgs">Simulador de ofertas y márgenes — Vossa v5.0</div>
+      </div>
+      <div style="background:#fff;border-radius:9px;border:1px solid var(--bo);overflow:hidden;height:calc(100vh - 130px)">
+        <iframe src="vossa_v5.html" style="width:100%;height:100%;border:none;" title="Calculadora de precios Vossa"></iframe>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -802,7 +815,7 @@ function toast(msg,ms=2400){const t=document.getElementById('toast');t.textConte
 function toggleDD(){document.getElementById('add').classList.toggle('open')}
 function swA(l,c,n,t){document.getElementById('ad').textContent=l;document.getElementById('ad').style.background=c;document.getElementById('al').textContent=n;document.getElementById('at').textContent=t;document.getElementById('add').classList.remove('open')}
 document.addEventListener('click',e=>{if(!e.target.closest('.as')&&!e.target.closest('.add'))document.getElementById('add').classList.remove('open')});
-const pgLbls={dashboard:'Dashboard',cashflow:'Flujo de caja',deudas:'Deudas bancarias',costos:'Costos fijos',calendario:'Calendario de pagos',importar:'Importar extractos',pyl:'P&L mensual'};
+const pgLbls={dashboard:'Dashboard',cashflow:'Flujo de caja',deudas:'Deudas bancarias',costos:'Costos fijos',calendario:'Calendario de pagos',importar:'Importar extractos',pyl:'P&L mensual',calculadora:'Calculadora de precios'};
 function nav(p,el){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));document.getElementById('panel-'+p).classList.add('active');if(el)el.classList.add('active');document.getElementById('bc').textContent=pgLbls[p]||p;if(p==='dashboard')renderDash();if(p==='importar'){calcCajaLibre();renderReglas()}if(p==='pyl')renderPL()}
 
 // ─── MODALS ───
